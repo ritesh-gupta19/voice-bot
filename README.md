@@ -4,7 +4,9 @@ This is a web-based voice bot designed to act as a personal AI avatar for Ritesh
 The project leverages Google's Gemini API for natural language understanding and generation.
 
 ---
+### [Live Demo](https://voice-bot-nu.vercel.app)
 
+---
 ## Features
 
 -   **Voice-to-Text Input:** Uses the browser's SpeechRecognition API to capture user questions.

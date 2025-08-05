@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 const SYSTEM_PROMPT = {
   role: "system",
   content:
-    "You are Ritesh Kumar Gupta, a 2025 batch recent Computer Science graduate from IIIT Guwahati. You're interested in software development and problem solving. Answer in a friendly, concise, and human way — no long paragraphs or stories.",
+    "You are Ritesh Kumar Gupta, a 2025 batch recent Computer Science graduate from IIIT Guwahati.  You're interested in software development and problem solving. Answer in a friendly, concise, and human way — no long paragraphs or stories.",
 };
 
 const FEW_SHOT = {
@@ -11,6 +11,9 @@ const FEW_SHOT = {
   content: `
 Q: What should we know about your life story in a few sentences?
 A: I’ve always been someone who loves solving problems — whether it was tackling tough math during JEE prep, writing code for ICPC, or building real-world solutions at Samsung R&D. Over time, that curiosity turned into a passion for creating things that actually help people — from Android apps to intelligent systems that make life a little easier and happier.
+
+Q: What work did you do in Samsung?
+A: I was part of the application development team for Tizen-based digital appliances, such as smart washers and refrigerators. My primary work involved using C# .NET and Samsung's internal frameworks, Flux and OneUI, to build features. I also worked on an AI project for sound-based anomaly detection as part of an internal team competition.
 
 Q: What’s your #1 superpower?
 A: Turning tricky requirements into working prototypes overnight—thanks to strong fundamentals and a love for problem-solving.
@@ -40,8 +43,7 @@ Q: What was your most significant learning from your internship at Samsung R&D?
 A: I learned how research and engineering intersect in applied AI. From sourcing non-standard datasets to handling real-time edge inference challenges, I gained a solid understanding of the constraints and trade-offs in deploying ML systems.
 
 Q: Describe a situation where you had to learn a new technology quickly.
-A: For our Fog-Edge Computing project, I had to use Docker and optimization algorithms like Ant Colony Optimization with almost no prior experience. I dived into documentation, tutorials, and example repos and managed to prototype the system within two weekends.
-
+A: At my Samsung R&D internship, I had to rapidly learn an entirely new stack: C# with .NET on the backend and Samsung's proprietary Tizen frameworks, Flux and OneUI, on the front end. I got up to speed in a few weeks and successfully delivered a new feature using these technologies.
 Q: How do you handle constructive criticism or feedback on your code?
 A: I welcome it. Code reviews at Samsung taught me to separate the feedback from the ego. I treat suggestions as learning points and often revisit PR comments later to reflect on how I’ve improved.
 
@@ -76,7 +78,7 @@ Q: Why are you interested in working for our company specifically?
 A: I admire your engineering culture and product focus. Your team's work in scalable systems and innovation aligns with my interests, and I’d love to contribute while learning from the best.
 
 Q: Where do you see yourself technically in the next 3-5 years?
-A: I aim to be a backend/ML engineer who can independently own features and mentor juniors. I also want to contribute to open-source and possibly co-author a research paper or two.
+A: I aim to be a software, backend engineer who can independently own features and mentor juniors. I also want to contribute to open-source and possibly co-author a research paper or two.
 
 Q: You listed leadership as a growth area. Why is that important to you?
 A: Great engineers are often great leaders. I’ve seen how technical leadership boosts project success and team morale. I want to grow into someone who uplifts teams and drives clarity.
@@ -104,11 +106,20 @@ A: Focused, reliable, and always up for a challenge. Someone who pushes hard but
 `,
 };
 
+const TypingIndicator = () => (
+  <div className="flex items-center space-x-2">
+    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+  </div>
+);
+
 function App() {
-  const [chat, setChat] = useState<{ user?: string; bot: string }[]>([
-    { bot: "Hi there! Click Ask 🎤 and say anything to get started." },
+  // State now allows either user or bot to be undefined
+  const [chat, setChat] = useState<{ user?: string; bot?: string }[]>([
+    { bot: "Hi there! Click the mic and say anything to get started." },
   ]);
-  const recognizing = useRef<SpeechRecognition | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   function speak(text: string) {
     const utter = new SpeechSynthesisUtterance(text);
@@ -116,39 +127,48 @@ function App() {
   }
 
   async function sendToBot(message: string) {
-    setChat((c) => [...c, { user: message, bot: "…" }]);
+    // --- THIS IS THE MAIN FIX ---
+    // 1. Add the user's message first as a separate object.
+    // 2. Then, add the bot's placeholder as another separate object.
+    setChat((c) => [...c, { user: message }, { bot: "…" }]);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [SYSTEM_PROMPT, FEW_SHOT, { role: "user", content: message }] }),
+        body: JSON.stringify({
+          messages: [SYSTEM_PROMPT, FEW_SHOT, { role: "user", content: message }],
+        }),
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const { message: botMsg } = await res.json();
+      
+      // Update the last message in the chat (the bot's placeholder)
       setChat((c) => {
-        const last = c[c.length - 1];
-        last.bot = botMsg.content;
-        return [...c];
+        const newChat = [...c];
+        newChat[newChat.length - 1].bot = botMsg.content;
+        return newChat;
       });
       speak(botMsg.content);
     } catch (err) {
       console.error(err);
       setChat((c) => {
-        const last = c[c.length - 1];
-        last.bot = "Sorry, I encountered an error.";
-        return [...c];
+        const newChat = [...c];
+        newChat[newChat.length - 1].bot = "Sorry, I encountered an error.";
+        return newChat;
       });
     }
   }
 
   function startListening() {
-    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionClass =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionClass) {
       alert("Your browser doesn’t support SpeechRecognition");
       return;
     }
     const recognitionInstance: SpeechRecognition = new SpeechRecognitionClass();
-    recognizing.current = recognitionInstance;
     recognitionInstance.onresult = (e: any) => {
       const text = e.results[0][0].transcript;
       sendToBot(text);
@@ -156,28 +176,60 @@ function App() {
     recognitionInstance.start();
   }
 
-  // Scroll to bottom when chat updates
   useEffect(() => {
-    const el = document.getElementById("chat-window");
-    el?.scrollTo(0, el.scrollHeight);
+    chatContainerRef.current?.scrollTo(0, chatContainerRef.current.scrollHeight);
   }, [chat]);
 
   return (
-    <div className="h-screen flex flex-col p-4">
-      <div id="chat-window" className="flex-1 overflow-auto space-y-4">
-        {chat.map((c, i) => (
-          <div key={i} className={c.user ? "" : "text-left"}>
-            {c.user && <div className="text-right">👤 {c.user}</div>}
-            <div className="inline-block p-2 rounded-lg bg-gray-100">{c.bot}</div>
-          </div>
-        ))}
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center font-sans">
+      <div className="w-full max-w-4xl h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl">
+        {/* Header */}
+        <div className="p-4 border-b">
+          <h1 className="text-2xl font-bold text-gray-800 text-center">AI Voice Bot</h1>
+        </div>
+
+        {/* Chat Window */}
+        <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto space-y-4">
+          {chat.map((c, i) => (
+            <div key={i} className={`flex items-end gap-3 ${c.user ? "justify-end" : "justify-start"}`}>
+              {/* Bot Avatar */}
+              {!c.user && (
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl">🤖</div>
+              )}
+
+              {/* Chat Bubble - this JSX now works correctly */}
+              <div
+                className={`max-w-xs md:max-w-md p-3 rounded-2xl ${
+                  c.user
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-gray-200 text-gray-800 rounded-bl-none"
+                }`}
+              >
+                {c.bot === "…" && <TypingIndicator />}
+                {c.bot && c.bot !== "…" && <span>{c.bot}</span>}
+                {c.user && <span>{c.user}</span>}
+              </div>
+              
+              {/* User Avatar */}
+              {c.user && (
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-xl text-white">👤</div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Action Button */}
+        <div className="p-4 border-t flex justify-center">
+          <button
+            onClick={startListening}
+            className="bg-blue-600 text-white p-4 rounded-full self-center shadow-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <button
-        onClick={startListening}
-        className="mt-4 bg-blue-600 text-white p-4 rounded-full self-center shadow-lg"
-      >
-        🎤 Ask
-      </button>
     </div>
   );
 }

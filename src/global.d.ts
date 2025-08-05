@@ -1,6 +1,4 @@
-// src/global.d.ts
-
-// Minimal SpeechRecognition interface
+// SpeechRecognition interface
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
