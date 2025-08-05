@@ -26,7 +26,7 @@ To run this project on your local machine, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/ritesh-gupta19/voice-bot.git](https://github.com/ritesh-gupta19/voice-bot.git)
+    git clone https://github.com/ritesh-gupta19/voice-bot.git
     ```
 
 2.  **Navigate to the project directory:**
