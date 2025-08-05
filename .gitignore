@@ -1,0 +1,21 @@
+# .gitignore
+
+# Dependencies
+/node_modules
+
+# Build folder
+/build
+
+# Environment Variables
+# This will ignore .env, .env.local, .env.development, etc.
+.env*
+!/.env.example
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
