@@ -115,7 +115,6 @@ const TypingIndicator = () => (
 );
 
 function App() {
-  // State now allows either user or bot to be undefined
   const [chat, setChat] = useState<{ user?: string; bot?: string }[]>([
     { bot: "Hi there! Click the mic and say anything to get started." },
   ]);
@@ -127,9 +126,6 @@ function App() {
   }
 
   async function sendToBot(message: string) {
-    // --- THIS IS THE MAIN FIX ---
-    // 1. Add the user's message first as a separate object.
-    // 2. Then, add the bot's placeholder as another separate object.
     setChat((c) => [...c, { user: message }, { bot: "…" }]);
 
     try {
@@ -143,7 +139,6 @@ function App() {
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const { message: botMsg } = await res.json();
       
-      // Update the last message in the chat (the bot's placeholder)
       setChat((c) => {
         const newChat = [...c];
         newChat[newChat.length - 1].bot = botMsg.content;
@@ -197,7 +192,7 @@ function App() {
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl">🤖</div>
               )}
 
-              {/* Chat Bubble - this JSX now works correctly */}
+              {/* Chat Bubble */}
               <div
                 className={`max-w-xs md:max-w-md p-3 rounded-2xl ${
                   c.user

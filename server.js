@@ -8,9 +8,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 app.use(bodyParser.json());
 
-// Initialize the Google Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Fast and capable model
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
 
 app.post("/api/chat", async (req, res) => {
   try {
